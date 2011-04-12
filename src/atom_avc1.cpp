@@ -47,7 +47,7 @@ MP4Avc1Atom::MP4Avc1Atom(MP4File &file)
         new MP4StringProperty(*this, "compressorName");
     pProp->SetFixedLength(32);
     pProp->SetCountedFormat(true);
-    pProp->SetValue("JVT/AVC Coding");
+    pProp->SetValue("H.264");
     AddProperty(pProp); /* 6 */
 
     AddReserved(*this, "reserved4", 4); /* 7 */

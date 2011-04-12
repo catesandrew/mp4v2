@@ -1065,6 +1065,33 @@ void MP4File::AddTrackReference(const char* trefName, MP4TrackId refTrackId)
         pCountProperty->IncrementValue();
     }
 }
+    
+void MP4File::AddTrackReference2(const char* trefName, MP4TrackId trackId, MP4TrackId refTrackId)
+{
+    (void)AddDescendantAtoms(MakeTrackName(refTrackId, NULL), "tref.chap");
+    AddTrackReference(MakeTrackName(refTrackId, "tref.chap"), trackId);
+}
+
+void MP4File::RemoveAllTrackReferences(const char* trefName, MP4TrackId trackId)
+{
+    if (MP4_INVALID_TRACK_ID != trackId)
+    {
+        // remove the reference
+        MP4Atom * pChap = FindAtom( MakeTrackName(trackId, trefName) );
+        if( pChap )
+        {
+            MP4Atom * pTref = pChap->GetParentAtom();
+            if( pTref )
+            {
+                pTref->DeleteChildAtom( pChap );
+                
+                MP4Atom* pParent = pTref->GetParentAtom();
+                pParent->DeleteChildAtom( pTref );
+            }
+        }
+    }
+}
+
 
 uint32_t MP4File::FindTrackReference(const char* trefName,
                                      MP4TrackId refTrackId)
@@ -1697,6 +1724,28 @@ MP4TrackId MP4File::AddMP4VideoTrack(
 
     return trackId;
 }
+    
+//jpeg
+
+MP4TrackId MP4File::AddMP4JpegVideoTrack(
+    uint32_t timeScale,
+    MP4Duration sampleDuration,
+    uint16_t width,
+    uint16_t height)
+{
+    MP4TrackId trackId = AddVideoTrackDefault(timeScale,
+                                              sampleDuration,
+                                              width,
+                                              height,
+                                              "jpeg");
+
+    SetTrackIntegerProperty(trackId,
+                            "mdia.minf.stbl.stsd.jpeg.width", width);
+    SetTrackIntegerProperty(trackId,
+                            "mdia.minf.stbl.stsd.jpeg.height", height);
+
+    return trackId;
+}
 
 // ismacrypted
 MP4TrackId MP4File::AddEncVideoTrack(uint32_t timeScale,
@@ -2172,6 +2221,31 @@ MP4TrackId MP4File::AddSubtitleTrack(uint32_t timescale,
     return trackId;
 }
 
+MP4TrackId MP4File::AddCCTrack(uint32_t timeScale,
+                               uint16_t width,
+                               uint16_t height)
+    {
+        MP4TrackId trackId =
+        AddTrack(MP4_CC_TRACK_TYPE, timeScale);
+
+        InsertChildAtom(MakeTrackName(trackId, "mdia.minf"), "nmhd", 0);
+
+        AddChildAtom(MakeTrackName(trackId, "mdia.minf.stbl.stsd"), "c608");
+
+        SetTrackFloatProperty(trackId, "tkhd.width", width);
+        SetTrackFloatProperty(trackId, "tkhd.height", height);
+
+        // stsd is a unique beast in that it has a count of the number
+        // of child atoms that needs to be incremented after we add the tx3g atom
+        MP4Integer32Property* pStsdCountProperty;
+        FindIntegerProperty(
+                            MakeTrackName(trackId, "mdia.minf.stbl.stsd.entryCount"),
+                            (MP4Property**)&pStsdCountProperty);
+        pStsdCountProperty->IncrementValue();
+
+        return trackId;
+    }    
+
 MP4TrackId MP4File::AddSubpicTrack(uint32_t timescale,
                                      uint16_t width,
                                      uint16_t height)
@@ -2411,9 +2485,9 @@ MP4TrackId MP4File::FindChapterReferenceTrack(MP4TrackId chapterTrackId, char * 
 {
     for (uint32_t i = 0; i < m_pTracks.Size(); i++)
     {
-        if( MP4_IS_VIDEO_TRACK_TYPE( m_pTracks[i]->GetType() ) ||
-            MP4_IS_AUDIO_TRACK_TYPE( m_pTracks[i]->GetType() ) )
-        {
+        //if( MP4_IS_VIDEO_TRACK_TYPE( m_pTracks[i]->GetType() ) ||
+        //    MP4_IS_AUDIO_TRACK_TYPE( m_pTracks[i]->GetType() ) )
+        //{
             MP4TrackId refTrackId = m_pTracks[i]->GetId();
             char *name = MakeTrackName(refTrackId, "tref.chap");
             if( FindTrackReference( name, chapterTrackId ) )
@@ -2427,7 +2501,7 @@ MP4TrackId MP4File::FindChapterReferenceTrack(MP4TrackId chapterTrackId, char * 
 
                 return m_pTracks[i]->GetId();
             }
-        }
+        //}
     }
 
     return MP4_INVALID_TRACK_ID;
@@ -2540,7 +2614,7 @@ MP4ChapterType MP4File::GetChapters(MP4Chapter_t ** chapterList, uint32_t * chap
                 for (uint32_t i = 0; i < counter; ++i)
                 {
                     // get the sample corresponding to the starttime
-                    MP4SampleId sampleId = pChapterTrack->GetSampleIdFromTime(startTime + duration, true);
+                    MP4SampleId sampleId = i+1; // pChapterTrack->GetSampleIdFromTime(startTime + duration, true);
                     pChapterTrack->ReadSample(sampleId, &sample, &sampleSize);
 
                     // get the starttime and duration
@@ -2549,7 +2623,9 @@ MP4ChapterType MP4File::GetChapters(MP4Chapter_t ** chapterList, uint32_t * chap
                     // we know that sample+2 contains the title (sample[0] and sample[1] is the length)
                     const char * title = (const char *)&(sample[2]);
                     int titleLen = min((uint32_t)((sample[0] << 8) | sample[1]), (uint32_t)MP4V2_CHAPTER_TITLE_MAX);
-                    strncpy(chapters[i].title, title, titleLen);
+
+                    memcpy(chapters[i].title, title, titleLen);
+                    chapters[i].titleLength = titleLen;
                     chapters[i].title[titleLen] = 0;
 
                     // write the duration (in milliseconds)

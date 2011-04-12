@@ -63,6 +63,9 @@ void MP4TextAtom::AddPropertiesStsdType()
     AddProperty(new MP4Integer16Property(*this, "foreColorGreen")); /* 17 */
     AddProperty(new MP4Integer16Property(*this, "foreColorBlue")); /* 18 */
 
+    AddProperty( /* 19 */
+                new MP4StringProperty(*this, "name"));
+    
 }
 
 void MP4TextAtom::AddPropertiesGmhdType()
@@ -134,11 +137,55 @@ void MP4TextAtom::Read ()
 {
     if (ATOMID(m_pParentAtom->GetType()) == ATOMID("stsd")) {
         AddPropertiesStsdType();
+
+        ReadProperties(0, 19);
+
+        uint64_t pos = m_File.GetPosition();
+        uint64_t end = GetEnd();
+        if (pos == end) {
+            // A text atom with missing "name".     
+            // Most of them does not have one.
+            return;
+        }
+        
+        // take a peek at the next byte
+        uint8_t strLength;
+        m_File.PeekBytes(&strLength, 1);
+        // if the value matches the remaining atom length
+        if (pos + strLength + 1 == end) {
+            // read a counted string
+            MP4StringProperty* pNameProp =
+                (MP4StringProperty*)m_pProperties[19];
+            pNameProp->SetCountedFormat(true);
+            ReadProperties(19);
+            pNameProp->SetCountedFormat(false);
+        } else {
+            // read a null terminated string
+            try {
+                // Unfortunately, there are some invalid mp4 writers that don't
+                // null the hdlr name string.  Generally this will be "automatically"
+                // terminated for them by the size field of the subsequent atom.  So if
+                // our size is off by one...let it slide.  otherwise, rethrow.
+                // The Skip() call will set our start to the correct location
+                // for the next Atom. See issue #52
+                ReadProperties(19);
+            }
+            catch(Exception* x) { 
+                if( m_File.GetPosition() - GetEnd() == 1 )
+                    delete x;
+                else
+                    throw x;
+            }
+        }
+        
+        Skip(); // to end of atom
+
     } else if (ATOMID(m_pParentAtom->GetType()) == ATOMID("gmhd")) {
         AddPropertiesGmhdType();
+        
+        MP4Atom::Read();
     }
 
-    MP4Atom::Read();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

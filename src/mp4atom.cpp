@@ -224,7 +224,7 @@ bool MP4Atom::IsReasonableType(const char* type)
 // generic read
 void MP4Atom::Read()
 {
-    if (ATOMID(m_type) != 0 && m_size > 1000000) {
+    if (ATOMID(m_type) != 0 && m_size > 10000000) {
         log.warningf("%s: \"%s\": %s atom size %" PRIu64 " is suspect", __FUNCTION__,
                      m_File.GetFilename().c_str(), m_type, m_size);
     }
@@ -830,6 +830,8 @@ MP4Atom::factory( MP4File &file, MP4Atom* parent, const char* type )
             break;
 
         case 'c':
+            if( ATOMID(type) == ATOMID("c608") )
+                return new MP4C608Atom(file);
             if( ATOMID(type) == ATOMID("chap") )
                 return new MP4TrefTypeAtom( file, type );
             if( ATOMID(type) == ATOMID("chpl") )

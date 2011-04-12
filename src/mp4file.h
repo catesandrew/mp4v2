@@ -298,6 +298,12 @@ public:
         uint16_t width,
         uint16_t height,
         uint8_t videoType);
+    
+    MP4TrackId AddMP4JpegVideoTrack(
+        uint32_t timeScale,
+        MP4Duration sampleDuration,
+        uint16_t width,
+        uint16_t height);
 
     MP4TrackId AddEncVideoTrack( // ismacryp
         uint32_t timeScale,
@@ -379,6 +385,10 @@ public:
     MP4TrackId AddSubtitleTrack(uint32_t timescale,
                                 uint16_t width,
                                 uint16_t height);
+    
+    MP4TrackId AddCCTrack(uint32_t timeScale,
+                          uint16_t width,
+                          uint16_t height);
 
     MP4TrackId AddSubpicTrack(uint32_t timescale,
                                 uint16_t width,
@@ -755,6 +765,9 @@ public:
         MP4Timestamp* pStartTime = NULL,
         MP4Duration* pDuration = NULL);
 
+    void AddTrackReference2(const char* trefName, MP4TrackId trackId, MP4TrackId refTrackId);
+    void RemoveAllTrackReferences(const char* trefName, MP4TrackId trackId);
+    
     /* "protected" interface to be used only by friends in library */
 
     uint64_t GetPosition( File* file = NULL );
