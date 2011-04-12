@@ -1,0 +1,124 @@
+###########################
+# MP4 V2 project .gitignore
+###########################
+
+include/mp4v2/project.h
+.libs/
+doc/man/
+libplatform/config.h
+libplatform/io/.deps/
+libplatform/io/.dirstamp
+libplatform/number/.deps/
+libplatform/number/.dirstamp
+libplatform/process/.deps/
+libplatform/process/.dirstamp
+libplatform/prog/.deps/
+libplatform/prog/.dirstamp
+libplatform/stamp-h1
+libplatform/sys/.deps/
+libplatform/sys/.dirstamp
+libplatform/time/.deps/
+libplatform/time/.dirstamp
+libtool
+libutil/.deps/
+libutil/.dirstamp
+mp4art
+mp4chaps
+mp4extract
+mp4file
+mp4info
+mp4subtitle
+mp4tags
+mp4track
+mp4trackdump
+project/project.m4
+src/.deps/
+src/.dirstamp
+src/bmff/.deps/
+src/bmff/.dirstamp
+src/itmf/.deps/
+src/itmf/.dirstamp
+src/qtff/.deps/
+src/qtff/.dirstamp
+util/.deps/
+util/.dirstamp
+
+
+###########################
+# Global .gitignore
+###########################
+*.log
+.DS_Store
+*.tmproj
+*.eprj
+
+
+# It's better to unpack these files and commit the raw source because
+# git has its own built in compression methods.
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.tar.gz
+*.zip
+*.bzip
+
+
+# osx
+.DS_Store
+Icon?
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+# SVN
+.svn/
+
+# Textmate
+*.tmproj
+*.tmproject
+tmtags
+
+# Autotools
+# http://www.gnu.org/software/automake
+
+Makefile.in
+GNUmakefile.in
+GNUmakefile
+config.status
+config.h.in
+config.h.in~
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/aclocal.m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+/autoaux
+
+# C++ 
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+
