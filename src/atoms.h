@@ -575,6 +575,12 @@ private:
     MP4Tx3gAtom &operator= ( const MP4Tx3gAtom &src );
 };
 
+class MP4C608Atom : public MP4Atom { /* subler */
+public:
+    MP4C608Atom(MP4File &file);
+    void Generate();
+};
+
 class MP4FtabAtom : public MP4Atom {
 public:
     MP4FtabAtom(MP4File &file);
