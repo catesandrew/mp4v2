@@ -1,5 +1,9 @@
-All docs are located in doc/ subdirectory. Useful starting points:
+This is a fork of code.google.com/p/mp4v2
 
-Release Notes           -- doc/ReleaseNotes.txt
-Building the Source     -- doc/BuildSource.txt
-Building the Repository -- doc/BuildRepository.txt
+to build
+autoreconf -fiv
+./configure --prefix=/usr/local --enable-shared -enable-static --enable-ub=i386,x86_64 --disable-gch
+make
+sudo make install
+sudo make install-man
+make dist
