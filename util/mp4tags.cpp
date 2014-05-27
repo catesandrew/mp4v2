@@ -24,6 +24,10 @@ int ratingIndexFromString( char *ratingString);
 uint8_t getContentRatingFromString(char *contentRatingString);
 uint16_t genreIndexFromString(const char* genreString);
 uint8_t getMediaKindFromString(const char* mediaKindString);
+uint16_t movieGenreIndexFromString(const char* genreString);
+uint16_t tvGenreIndexFromString(const char* genreString);
+void ListMovieGenreIDValues();
+void ListTVGenreIDValues();
 
 enum rating_type {
     MPAA_NR = 1,
@@ -207,11 +211,67 @@ static const iTMF_rating_t rating_strings[] = {
 
 typedef struct genreType_t
 {
-    uint8_t index;
+    uint16_t index;
     const char *short_name;
     const char *english_name;
 } genreType_t;
 
+static const genreType_t genreMovieType_strings[] = {
+	{ 4401, "action", "Action & Adventure" },
+	{ 4401, "adventure", "Action & Adventure" },
+	{ 4402, "anime", "Anime" },
+	{ 4403, "classics", "Classics" },
+	{ 4404, "comedy", "Comedy" },
+	{ 4405, "documentary", "Documentary" },
+	{ 4406, "drama", "Drama" },
+	{ 4407, "foreign", "Foreign" },
+	{ 4408, "horror", "Horror" },
+	{ 4409, "independent", "Independent" },
+	{ 4410, "kids", "Kids & Family" },
+	{ 4410, "family", "Kids & Family" },
+	{ 4411, "musicals", "Musicals" },
+	{ 4412, "romance", "Romance" },
+	{ 4413, "sci-fi", "Sci-Fi & Fantasy" },
+	{ 4413, "fantasy", "Sci-Fi & Fantasy" },
+	{ 4414, "short", "Short Films" },
+	{ 4415, "special", "Special Interest" },
+	{ 4416, "thriller", "Thriller" },
+	{ 4417, "sports", "Sports" },
+	{ 4418, "western", "Western" },
+	{ 4419, "urban", "Urban" },
+	{ 4420, "holiday", "Holiday" },
+	{ 4421, "made-tv", "Made for TV" },
+	{ 4422, "concert", "Concert Films" },
+	{ 4423, "music-doc", "Music Documentaries" },
+	{ 4424, "music-film", "Music Feature Films" },
+	{ 4425, "japanese", "Japanese Cinema" },
+	{ 4426, "jidaigeki", "Jidaigeki" },
+	{ 4427, "tokusatsu", "Tokusatsu" },
+	{ 4428, "korean", "Korean Cinema" },
+
+  {0, "undefined" } // must be last
+};
+
+static const genreType_t genreTvType_strings[] = {
+	{ 4000, "comedy", "Comedy" },
+	{ 4001, "drama", "Drama" },
+	{ 4002, "animation", "Animation" },
+	{ 4003, "action", "Action & Adventure" },
+	{ 4003, "adventure", "Action & Adventure" },
+	{ 4004, "classic", "Classic" },
+	{ 4005, "kids", "Kids" },
+	{ 4005, "nonfiction", "Nonfiction" },
+	{ 4007, "reality", "Reality TV" },
+	{ 4008, "sci-fi", "Sci-Fi & Fantasy" },
+	{ 4008, "fantasy", "Sci-Fi & Fantasy" },
+	{ 4009, "sports", "Sports" },
+	{ 4010, "teens", "Teens" },
+	{ 4011, "latino", "Latino TV" },
+
+  {0, "undefined" } // must be last
+};
+
+// ID3v1GenreList
 static const genreType_t genreType_strings[] = {
     {1,   "blues",             "Blues" },
     {2,   "classicrock",       "Classic Rock" },
@@ -425,7 +485,7 @@ static const char* const help_text =
     "  -H, -hdvideo     NUM  Set the HD flag (1\\0)\n" // --is_hd_video     set the hd video tag [yes/no]
     "  -i, -type        STR  Set the Media Type(\"Movie\", \"TV Show\", \"Music Video\", ...)\n" // --media_kind  set the media kind tag ("Normal", "Movie", "TV Show", "Audiobook", "Whacked Bookmark", "Music Video", "Short Film", "Booklets")
     "  -I, -contentid   NUM  Set the content ID\n" // --cnid    set cnid tag
-    "  -j, -genreid     NUM  Set the genre ID\n"
+    "  -j, -genreid     NUM  Set the genre ID\n"  // Set iTunes Genre ID.  This does not necessarily have to match genre
     "  -l, -longdesc    NUM  Set the long description\n"  // --long_description  set long description tag
     "  -L, -lyrics      NUM  Set the lyrics\n"  // --lyrics    set lyrics tag
     "  -m, -description STR  Set the short description\n"  // --description   set description tag
@@ -524,6 +584,7 @@ extern "C" int
        metadata types (again) as a struct. */
     const char *tags[UCHAR_MAX];
     uint64_t nums[UCHAR_MAX];
+    uint8_t st = 0;
 
     memset( tags, 0, sizeof( tags ) );
     memset( nums, 0, sizeof( nums ) );
@@ -817,6 +878,14 @@ extern "C" int
             MP4TagsSetDisk( mdata, &td );
         }
 
+        // process the media type first.
+        if( tags[OPT_MEDIA_TYPE] ) {
+          st = getMediaKindFromString( tags[OPT_MEDIA_TYPE] );
+          if (st != 0) {
+            MP4TagsSetMediaType( mdata, &st);
+          }
+        }
+
         /* Set the other relevant attributes */
         for ( int i = 0;  i < UCHAR_MAX;  i++ ) {
             if ( tags[i] ) {
@@ -847,18 +916,56 @@ extern "C" int
                         break;
                     case OPT_GENRE:
                     {
+                        uint16_t genreType = 0;
+                        if (st == 9) {
+                            // movie
+                            genreType = movieGenreIndexFromString( tags[i] );
 
-                      uint16_t genreType = genreIndexFromString( tags[i] );
-                      if (genreType) {
-                          MP4TagsSetGenre(mdata, NULL);
-                          MP4TagsSetGenreType(mdata, &genreType);
-                      }
-                      else {
-                          MP4TagsSetGenreType(mdata, NULL);
-                          MP4TagsSetGenre(mdata, tags[i]);
-                      }
+                            if (genreType) {
+                                //uint16_t value = static_cast<uint16_t>( genreMovieType_strings[genreType-1].index );
+                                //MP4TagsSetGenreType(mdata, &value);
 
-                      break;
+                                uint32_t value = static_cast<uint32_t>( genreMovieType_strings[genreType-1].index );
+                                MP4TagsSetGenreID( mdata, &value );
+
+                                MP4TagsSetGenreType(mdata, NULL);
+                                MP4TagsSetGenre(mdata, genreMovieType_strings[genreType-1].english_name);
+                            } else {
+                                MP4TagsSetGenreID( mdata, NULL );
+                            }
+
+                        } else if (st == 10) {
+                            // tv show
+                            genreType = tvGenreIndexFromString( tags[i] );
+
+                            if (genreType) {
+                                //uint16_t value = static_cast<uint16_t>( genreTvType_strings[genreType-1].index );
+                                //MP4TagsSetGenreType(mdata, &value);
+
+                                uint32_t value = static_cast<uint32_t>( genreMovieType_strings[genreType-1].index );
+                                MP4TagsSetGenreID( mdata, &value );
+
+                                MP4TagsSetGenreType(mdata, NULL);
+                                MP4TagsSetGenre(mdata, genreTvType_strings[genreType-1].english_name);
+                            } else {
+                                MP4TagsSetGenreID( mdata, NULL );
+                            }
+                        } else if (st == 1 || st == 6) {
+                            // music or music video
+                            genreType = genreIndexFromString( tags[i] );
+
+                            if (genreType) {
+                                MP4TagsSetGenre(mdata, NULL);
+                                MP4TagsSetGenreType(mdata, &genreType);
+                            }
+                        }
+
+                        if (!genreType) {
+                            MP4TagsSetGenreType(mdata, NULL);
+                            MP4TagsSetGenre(mdata, tags[i]);
+                        }
+
+                        break;
                     }
                     case OPT_GROUPING:
                         MP4TagsSetGrouping( mdata, tags[i] );
@@ -871,11 +978,7 @@ extern "C" int
                     }
                     case OPT_MEDIA_TYPE:
                     {
-                        uint8_t st = getMediaKindFromString( tags[i] );
-                        //printf("genre: %s, type: %i", tags[i], st);
-                        if (st != 0) {
-                            MP4TagsSetMediaType( mdata, &st);
-                        }
+                        // this is set in before the loop
                         break;
                     }
                     case OPT_CONTENTID:
@@ -1400,6 +1503,38 @@ uint16_t genreIndexFromString(const char* genreString) {
     return genreIndex;
 }
 
+uint16_t tvGenreIndexFromString(const char* genreString) {
+  uint16_t genreIndex = 0;
+  genreType_t *genreList;
+  int k = 0;
+  for ( genreList = (genreType_t*) genreTvType_strings; genreList->english_name; genreList++, k++ ) {
+    if( strcmp(genreString, genreList->english_name) == 0) {
+        genreIndex = k + 1;
+        break;
+    } else if( strcmp(genreString, genreList->short_name) == 0) {
+        genreIndex = k + 1;
+        break;
+    }
+  }
+  return genreIndex;
+}
+
+uint16_t movieGenreIndexFromString(const char* genreString) {
+  uint16_t genreIndex = 0;
+  genreType_t *genreList;
+  int k = 0;
+  for ( genreList = (genreType_t*) genreMovieType_strings; genreList->english_name; genreList++, k++ ) {
+    if( strcmp(genreString, genreList->english_name) == 0) {
+        genreIndex = k + 1;
+        break;
+    } else if( strcmp(genreString, genreList->short_name) == 0) {
+        genreIndex = k + 1;
+        break;
+    }
+  }
+  return genreIndex;
+}
+
 uint8_t getMediaKindFromString(const char* mediaKindString) {
     uint8_t mediaKind = 0;
     mediaKind_t *mediaKindList;
@@ -1409,4 +1544,32 @@ uint8_t getMediaKindFromString(const char* mediaKindString) {
         }
     }
     return mediaKind;
+}
+
+void ListTVGenreIDValues() {
+    fprintf(stdout, "Available iTunes TV Genre IDs:  (index) short_name -> \"pretty print name\"\n");
+
+    genreType_t *genreList;
+    int k = 0;
+    for ( genreList = (genreType_t*) genreTvType_strings; genreList->english_name; genreList++, k++ ) {
+        if(genreList->index == 255) {
+            continue;
+        }
+        fprintf(stdout, "(%u) %s -> \"%s\"\n", genreList->index, genreList->short_name, genreList->english_name);
+    }
+    return;
+}
+
+void ListMovieGenreIDValues() {
+    fprintf(stdout, "Available iTunes Movie Genre IDs:  (index) short_name -> \"pretty print name\"\n");
+
+    genreType_t *genreList;
+    int k = 0;
+    for ( genreList = (genreType_t*) genreMovieType_strings; genreList->english_name; genreList++, k++ ) {
+        if(genreList->index == 255) {
+            continue;
+        }
+        fprintf(stdout, "(%u) %s -> \"%s\"\n", genreList->index, genreList->short_name, genreList->english_name);
+    }
+    return;
 }
