@@ -260,7 +260,7 @@ static const genreType_t genreTvType_strings[] = {
 	{ 4003, "adventure", "Action & Adventure" },
 	{ 4004, "classic", "Classic" },
 	{ 4005, "kids", "Kids" },
-	{ 4005, "nonfiction", "Nonfiction" },
+	{ 4006, "nonfiction", "Nonfiction" },
 	{ 4007, "reality", "Reality TV" },
 	{ 4008, "sci-fi", "Sci-Fi & Fantasy" },
 	{ 4008, "fantasy", "Sci-Fi & Fantasy" },
